@@ -1,4 +1,4 @@
-import React, { Component, Fragment } from 'react';
+import React, {Component, Fragment} from 'react';
 
 import Post from '../../components/Feed/Post/Post';
 import Button from '../../components/Button/Button';
@@ -35,7 +35,7 @@ class Feed extends Component {
                 return res.json();
             })
             .then(resData => {
-                this.setState({ status: resData.status });
+                this.setState({status: resData.status});
             })
             .catch(this.catchError);
 
@@ -44,16 +44,16 @@ class Feed extends Component {
 
     loadPosts = direction => {
         if (direction) {
-            this.setState({ postsLoading: true, posts: [] });
+            this.setState({postsLoading: true, posts: []});
         }
         let page = this.state.postPage;
         if (direction === 'next') {
             page++;
-            this.setState({ postPage: page });
+            this.setState({postPage: page});
         }
         if (direction === 'previous') {
             page--;
-            this.setState({ postPage: page });
+            this.setState({postPage: page});
         }
         const graphqlQuery = {
             query: `
@@ -128,12 +128,12 @@ class Feed extends Component {
     };
 
     newPostHandler = () => {
-        this.setState({ isEditing: true });
+        this.setState({isEditing: true});
     };
 
     startEditPostHandler = postId => {
         this.setState(prevState => {
-            const loadedPost = { ...prevState.posts.find(p => p._id === postId) };
+            const loadedPost = {...prevState.posts.find(p => p._id === postId)};
 
             return {
                 isEditing: true,
@@ -143,7 +143,7 @@ class Feed extends Component {
     };
 
     cancelEditHandler = () => {
-        this.setState({ isEditing: false, editPost: null });
+        this.setState({isEditing: false, editPost: null});
     };
 
     finishEditHandler = postData => {
@@ -171,10 +171,34 @@ class Feed extends Component {
                 let graphqlQuery = {
                     query: `mutation {
   createPost(post:{title: "${postData.title}", content: "${postData.content}", imageUrl:"${encodedImageUrl}"}){
-    title
+       title
+    content
+    imageUrl
+    createdAt
+    updatedAt
+    _id
+    creator {name}
   }
 }
-    `}
+    `
+                }
+                if (this.state.editPost) {
+                    graphqlQuery = {
+                        query: `
+mutation {
+  updatePost(id:"${this.state.editPost._id}", postInput:{title: "${postData.title}", content: "${postData.content}", imageUrl:"${encodedImageUrl}"}){
+    title
+    content
+    imageUrl
+    createdAt
+    updatedAt
+    _id
+    creator {name}
+  }
+}
+`
+                    }
+                }
 
                 return fetch('http://localhost:8080/graphql', {
                     method: 'POST',
@@ -195,16 +219,21 @@ class Feed extends Component {
                     );
                 }
                 if (resData.errors) {
-                    throw new Error('User login failed!');
+                    throw new Error(resData.errors.toString());
                 }
                 console.log(resData);
+
+                let resDataField = 'createPost'
+                if (this.state.editPost) {
+                    resDataField = 'updatePost'
+                }
                 const post = {
-                    _id: resData.data.createPost._id,
-                    title: resData.data.createPost.title,
-                    content: resData.data.createPost.content,
-                    creator: resData.data.createPost.creator,
-                    createdAt: resData.data.createPost.createdAt,
-                    imagePath: resData.data.createPost.imageUrl
+                    _id: resData.data[resDataField]._id,
+                    title: resData.data[resDataField].title,
+                    content: resData.data[resDataField].content,
+                    creator: resData.data[resDataField].creator,
+                    createdAt: resData.data[resDataField].createdAt,
+                    imagePath: resData.data[resDataField].imageUrl
                 };
                 this.setState(prevState => {
                     let updatedPosts = [...prevState.posts];
@@ -237,11 +266,11 @@ class Feed extends Component {
     };
 
     statusInputChangeHandler = (input, value) => {
-        this.setState({ status: value });
+        this.setState({status: value});
     };
 
     deletePostHandler = postId => {
-        this.setState({ postsLoading: true });
+        this.setState({postsLoading: true});
         fetch('http://localhost:8080/feed/post/' + postId, {
             method: 'DELETE',
             headers: {
@@ -264,22 +293,22 @@ class Feed extends Component {
             })
             .catch(err => {
                 console.log(err);
-                this.setState({ postsLoading: false });
+                this.setState({postsLoading: false});
             });
     };
 
     errorHandler = () => {
-        this.setState({ error: null });
+        this.setState({error: null});
     };
 
     catchError = error => {
-        this.setState({ error: error });
+        this.setState({error: error});
     };
 
     render() {
         return (
             <Fragment>
-                <ErrorHandler error={this.state.error} onHandle={this.errorHandler} />
+                <ErrorHandler error={this.state.error} onHandle={this.errorHandler}/>
                 <FeedEdit
                     editing={this.state.isEditing}
                     selectedPost={this.state.editPost}
@@ -308,12 +337,12 @@ class Feed extends Component {
                 </section>
                 <section className="feed">
                     {this.state.postsLoading && (
-                        <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-                            <Loader />
+                        <div style={{textAlign: 'center', marginTop: '2rem'}}>
+                            <Loader/>
                         </div>
                     )}
                     {this.state.posts.length <= 0 && !this.state.postsLoading ? (
-                        <p style={{ textAlign: 'center' }}>No posts found.</p>
+                        <p style={{textAlign: 'center'}}>No posts found.</p>
                     ) : null}
                     {!this.state.postsLoading && (
                         <Paginator
